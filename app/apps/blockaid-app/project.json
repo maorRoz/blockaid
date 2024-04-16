@@ -1,0 +1,9 @@
+{
+  "name": "blockaid-app",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/blockaid-app/src",
+  "projectType": "application",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project blockaid-app --web",
+  "targets": {}
+}

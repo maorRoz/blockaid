@@ -1,0 +1,24 @@
+{
+  "name": "blockaid-server",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/blockaid-server/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "blockaid-server:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "blockaid-server:build:development"
+        },
+        "production": {
+          "buildTarget": "blockaid-server:build:production"
+        }
+      }
+    }
+  }
+}
