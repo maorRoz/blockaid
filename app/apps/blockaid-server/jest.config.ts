@@ -1,6 +1,6 @@
 /* eslint-disable */
 export default {
-  displayName: 'blockaid-server',
+ // displayName: 'blockaid-server',
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
   transform: {

@@ -1,52 +1,49 @@
-import { useState } from 'react';
 import { BarChart } from '@mui/x-charts/BarChart';
 import dayjs from 'dayjs';
-import { Result } from '@app/types';
+import { ResultsByTimeFrameValues } from '@app/types';
 import { TextField, MenuItem } from '@mui/material';
-
-const availableStackOrder = ['seconds', 'minutes', 'hours', 'days'] as const;
+import {
+  AVAILABLE_TIME_FRAMES,
+  AvailableTimeFrame,
+} from './available-time-frame';
 
 export interface ResultsCountPerTimeFrameStackingChartProps {
-  results: Result[];
+  resultsByTimeFrameValues: ResultsByTimeFrameValues;
+  selectedTimeFrame: AvailableTimeFrame;
+  onTimeFrameSelect: (timeFrame: AvailableTimeFrame) => void;
 }
 
 export const ResultsCountPerTimeFrameStackingChart = ({
-  results,
+  resultsByTimeFrameValues,
+  selectedTimeFrame,
+  onTimeFrameSelect
 }: ResultsCountPerTimeFrameStackingChartProps) => {
-  const [stackOrder, setStackOrder] = useState('none');
 
-  const resultsPerHours = results.reduce(
-    (acc: Record<number, { malicious: number; benign: number }>, result) => {
-      const resultHour = dayjs(result.startedAt).hour();
+  const sortedResultsPerTimeFrameEntries = Object.entries(
+    resultsByTimeFrameValues
+  )
+    .slice(0, 50)
+    .sort(([t1], [t2]) => Number(t1) - Number(t2));
 
-      acc[resultHour] ??= { malicious: 0, benign: 0 };
-
-      if (result.isMalicious) {
-        acc[resultHour].malicious++;
-      } else {
-        acc[resultHour].benign++;
-      }
-
-      return acc;
-    },
-    {}
+  const seriesMaliciousData = sortedResultsPerTimeFrameEntries.map(
+    ([, value]) => value.malicious
   );
-  const seriesMaliciousData = Object.values(resultsPerHours).map(
-    (value) => value.malicious
+  const seriesBenignData = sortedResultsPerTimeFrameEntries.map(
+    ([, value]) => value.benign
   );
-  const seriesBenignData = Object.values(resultsPerHours).map(
-    (value) => value.benign
-  );
+
   return (
     <div className="relative top-1/2 translate-y-1/2 ">
       <TextField
         sx={{ minWidth: 150, mr: 5, mt: 1 }}
         select
         label="Time Frame"
-        value={stackOrder}
-        onChange={(event) => setStackOrder(event.target.value as any)}
+        value={selectedTimeFrame}
+        onChange={(event) =>
+          onTimeFrameSelect(event.target.value as AvailableTimeFrame)
+        }
       >
-        {availableStackOrder.map((offset) => (
+        {AVAILABLE_TIME_FRAMES.map((offset) => (
           <MenuItem key={offset} value={offset}>
             {offset}
           </MenuItem>
@@ -60,9 +57,11 @@ export const ResultsCountPerTimeFrameStackingChart = ({
         ]}
         xAxis={[
           {
-            label: 'Hours',
+            label: selectedTimeFrame,
             scaleType: 'band' as const,
-            data: Object.keys(resultsPerHours),
+            data: sortedResultsPerTimeFrameEntries.map(([timeFrame]) =>
+              dayjs(Number(timeFrame)).format('DD/MM/YYYY HH:mm:ss')
+            ),
           },
         ]}
       />

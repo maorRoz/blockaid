@@ -2,15 +2,19 @@ import { Route, Routes, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import AppBar from '@mui/material/AppBar';
 import axios from 'axios';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import Button from '@mui/material/Button';
-import { SingleInputTimeRangeField } from '@mui/x-date-pickers-pro/SingleInputTimeRangeField';
 import { TypesDAppsPieChart } from './types-dapps-piechart';
 import Blockaid from './blockaid.svg';
-import { Result } from '@app/types';
+import {
+  ResultsByTimeFrameValues,
+  ResultsStatistics,
+  TimeFrame,
+} from '@app/types';
 import { TopDAppsTable } from './top-dapps-table';
 import { ResultsCountPerTimeFrameStackingChart } from './results-count-per-time-frame-stacking-chart';
+import { useState } from 'react';
+import { AvailableTimeFrame } from './available-time-frame';
+import { DataTimeRangePicker } from './data-time-range-picker';
 
 const pages = [
   { label: 'Results Count Per Time frame', route: '/' },
@@ -19,14 +23,54 @@ const pages = [
   { label: 'Top Benign Results', route: '/top-benign' },
 ];
 
+const availableTimeFrameToTimeFrame: Record<AvailableTimeFrame, TimeFrame> = {
+  seconds: 'second',
+  minutes: 'minute',
+  hours: 'hour',
+  days: 'day',
+};
+
 export function App() {
-  const { data: results = [] } = useQuery<Result[]>({
-    queryKey: ['getResults'],
+  const [selectedTimeFrame, setSelectedTimeFrame] =
+    useState<AvailableTimeFrame>('hours');
+
+  const [dateRange, setDateRange] = useState<{ from: string; to: string }>();
+
+  const {
+    data: {
+      maliciousDAppsCount,
+      benignDAppsCount,
+      topMaliciousDApps,
+      topBenignDApps,
+    } = {
+      maliciousDAppsCount: 0,
+      benignDAppsCount: 0,
+      topMaliciousDApps: [],
+      topBenignDApps: [],
+    },
+  } = useQuery<ResultsStatistics>({
+    queryKey: ['getResultsStatistics', dateRange],
     queryFn: async () => {
-      const { data } = await axios.get('/api');
+      const { data } = await axios.get('/api/resultsStatistics', {
+        params: { ...dateRange },
+      });
       return data;
     },
   });
+
+  const { data: resultsByTimeFrameValues = {} } =
+    useQuery<ResultsByTimeFrameValues>({
+      queryKey: ['getResultsByTimeFrameValues', dateRange, selectedTimeFrame],
+      queryFn: async () => {
+        const { data } = await axios.get('/api/resultsByTimeFrameValues', {
+          params: {
+            ...dateRange,
+            timeFrame: availableTimeFrameToTimeFrame[selectedTimeFrame],
+          },
+        });
+        return data;
+      },
+    });
 
   return (
     <div className="max-w-[1920px] m-auto min-h-screen">
@@ -51,39 +95,44 @@ export function App() {
               </Button>
             ))}
           </div>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <SingleInputTimeRangeField
-              label="From - To"
-              color="primary"
-              sx={{ bgcolor: 'white' }}
-            />
-          </LocalizationProvider>
+          <DataTimeRangePicker
+            dateRange={dateRange}
+            onDateRangeChange={
+              setDateRange as (dateRange: {
+                from?: string;
+                to?: string;
+              }) => void
+            }
+          />
         </div>
       </AppBar>
       <Routes>
         <Route
           path="/"
-          element={<ResultsCountPerTimeFrameStackingChart results={results} />}
+          element={
+            <ResultsCountPerTimeFrameStackingChart
+              resultsByTimeFrameValues={resultsByTimeFrameValues}
+              selectedTimeFrame={selectedTimeFrame}
+              onTimeFrameSelect={setSelectedTimeFrame}
+            />
+          }
         />
         <Route
           path="/types-dapps"
-          element={<TypesDAppsPieChart results={results} />}
+          element={
+            <TypesDAppsPieChart
+              maliciousDAppsCount={maliciousDAppsCount}
+              benignDAppsCount={benignDAppsCount}
+            />
+          }
         />
         <Route
           path="/top-malicious"
-          element={
-            <TopDAppsTable
-              results={results.filter((result) => result.isMalicious)}
-            />
-          }
+          element={<TopDAppsTable results={topMaliciousDApps} />}
         />
         <Route
           path="/top-benign"
-          element={
-            <TopDAppsTable
-              results={results.filter((result) => !result.isMalicious)}
-            />
-          }
+          element={<TopDAppsTable results={topBenignDApps} />}
         />
       </Routes>
     </div>

@@ -1,26 +1,51 @@
 import { Injectable } from '@nestjs/common';
-import rawResultsList from './blockaid_results.json';
-import { Result } from '@app/types';
-
-interface RawResult {
-  URL: string;
-  IS_MALICIOUS: string;
-  LATENCY: number;
-  STARTED_AT: string;
-}
-
-const rawResultToResult = (rawResult: RawResult): Result => ({
-  url: rawResult.URL,
-  isMalicious: rawResult.IS_MALICIOUS === 'true',
-  latency: rawResult.LATENCY,
-  startedAt: rawResult.STARTED_AT,
-});
+import { Result, ResultsByTimeFrameValues } from '@app/types';
+import { getResults } from './get-results';
+import { getTopDApps } from './get-top-dapps';
+import { getResultsPerTimeFrame } from './get-results-per-time-frame';
 
 @Injectable()
 export class AppService {
-  getData(): Result[] {
-    const results = (rawResultsList as RawResult[])
-      .map(rawResultToResult);
-    return results;
+  getResultsStatistics(dateRange?: { from?: string; to?: string }): {
+    maliciousDAppsCount: number;
+    benignDAppsCount: number;
+    topMaliciousDApps: (Result & { count: number })[];
+    topBenignDApps: (Result & { count: number })[];
+  } {
+    const results = getResults(dateRange);
+
+    const maliciousResults = results.filter(
+      (result) => result.isMalicious
+    );
+    const benignResults = results.filter(
+      (result) => !result.isMalicious
+    );
+
+    const topMaliciousDApps = getTopDApps(maliciousResults);
+
+    const topBenignDApps = getTopDApps(benignResults);
+
+    return {
+      maliciousDAppsCount: maliciousResults.length,
+      benignDAppsCount: benignResults.length,
+      topMaliciousDApps,
+      topBenignDApps,
+    };
+  }
+
+  getResultsByTimeFrameValues({
+    timeFrame,
+    dateRange,
+  }: {
+    timeFrame?: 'second' | 'minute' | 'hour' | 'day';
+    dateRange?: { from?: string; to?: string };
+  }): ResultsByTimeFrameValues {
+    console.log(dateRange);
+    const results = getResults(dateRange);
+
+    return getResultsPerTimeFrame({
+      timeFrame,
+      results,
+    });
   }
 }

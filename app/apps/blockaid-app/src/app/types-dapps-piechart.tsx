@@ -1,18 +1,13 @@
 import { PieChart, pieArcLabelClasses } from '@mui/x-charts/PieChart';
-import { Result } from '@app/types';
 
 export interface TypesDAppsPieChartProps {
-  results: Result[];
+  maliciousDAppsCount: number;
+  benignDAppsCount: number;
 }
-export const TypesDAppsPieChart = ({ results }: TypesDAppsPieChartProps) => {
-  const { maliciousDAppsCount, benignDAppsCount } = results.reduce(
-    (acc, result) =>
-      result.isMalicious
-        ? { ...acc, maliciousDAppsCount: acc.maliciousDAppsCount + 1 }
-        : { ...acc, benignDAppsCount: acc.benignDAppsCount + 1 },
-    { maliciousDAppsCount: 0, benignDAppsCount: 0 }
-  );
-
+export const TypesDAppsPieChart = ({
+  maliciousDAppsCount,
+  benignDAppsCount,
+}: TypesDAppsPieChartProps) => {
   return (
     <div className="relative top-1/2 translate-y-1/2 ">
       <PieChart
