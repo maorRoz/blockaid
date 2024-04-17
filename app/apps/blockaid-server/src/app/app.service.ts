@@ -40,7 +40,6 @@ export class AppService {
     timeFrame?: 'second' | 'minute' | 'hour' | 'day';
     dateRange?: { from?: string; to?: string };
   }): ResultsByTimeFrameValues {
-    console.log(dateRange);
     const results = getResults(dateRange);
 
     return getResultsPerTimeFrame({

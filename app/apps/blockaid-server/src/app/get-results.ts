@@ -29,7 +29,7 @@ export const getResults = (dateRange?: {
           dayjs(result.startedAt).isAfter(dayjs(dateRange.from));
         const isBefore =
           !dateRange.to ||
-          dayjs(result.startedAt).isBefore(dayjs(dateRange.from));
+          dayjs(result.startedAt).isBefore(dayjs(dateRange.to));
 
         return isAfter && isBefore;
       })
